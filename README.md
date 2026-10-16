@@ -150,5 +150,4 @@ Planned: `apps/web` (Next.js UI), `apps/worker` (orchestrator), `apps/demoboard`
 <br>
 <p align="center">
   <img src="assets/brand/logo.svg" alt="AgentCast logo" width="56"><br>
-  <sub>Made for AzinHacks 2026 · USAR, GGSIPU</sub>
 </p>
