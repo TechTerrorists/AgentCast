@@ -725,7 +725,7 @@ type EDL = {
 | **Reliability** | ≥ 80% of runs on the curated demo targets produce a video with no human intervention. Every stage has retries with backoff and honors `Retry-After` on 429/503. |
 | **Cost control** | `max_steps` and `max_duration_seconds` on every Agent run. Browser sessions get `timeout_seconds` and guaranteed `DELETE`. TTS only re-synthesizes changed lines. Per-job budget display. |
 | **Observability** | Structured logs per stage (pino), every external call logged with duration and status (no secrets), stage timings shown in the UI, `events.ndjson` per job for replay/debug |
-| **Portability** | Runs on a single laptop (Linux/macOS), Node 20+, FFmpeg (bundled by Remotion), Chromium only for local stills. Needs only TinyFish and ElevenLabs keys plus any one supported coding-agent CLI that's logged in (§9.9). `git clone` → `pnpm install` → `agentcast doctor` → run. |
+| **Portability** | Runs on a single laptop (Linux/macOS), Node 22+, FFmpeg (bundled by Remotion), Chromium only for local stills. Needs only TinyFish and ElevenLabs keys plus any one supported coding-agent CLI that's logged in (§9.9). `git clone` → `pnpm install` → `agentcast doctor` → run. |
 
 ---
 

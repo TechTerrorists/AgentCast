@@ -1,0 +1,17 @@
+{
+  "name": "@agentcast/cli",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "agentcast": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@agentcast/llm": "workspace:*",
+    "@agentcast/shared": "workspace:*",
+    "zod": "^4.6.7"
+  }
+}

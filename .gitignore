@@ -1,0 +1,19 @@
+node_modules/
+.env
+.env.*
+!.env.example
+dist/
+.next/
+.turbo/
+coverage/
+*.log
+.DS_Store
+
+# job data and media never go in git
+.agentcast/
+out/
+spikes/**/output/
+*.mp4
+*.webm
+*.mp3
+*.wav

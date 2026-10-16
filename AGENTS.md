@@ -10,21 +10,26 @@ Read these before making design decisions:
 - `IMPLEMENTATION_PLAN.md`: phases, repo layout, tasks, acceptance criteria
 
 ## Current status
-Planning is done and no application code exists yet. Work starts with the Phase 0 spikes in `spikes/` (throwaway scripts), then the monorepo scaffold in Phase 1. Update this file's **Commands** section as real scripts land. Don't document commands that don't exist yet.
+Phase 1 is underway. Built so far:
+- `packages/shared`: zod schemas for every artifact (flows, replay plan, timeline, script, EDL, job, events) plus the variant matrix
+- `packages/llm`: the LLM runner with the `claude-code` adapter (opencode, codex and anthropic-api are detected but not implemented yet)
+- `packages/cli`: `agentcast doctor`
 
-## Planned layout
-pnpm + Turborepo monorepo, TypeScript strict throughout:
-- `apps/web`: Next.js (App Router) + Tailwind UI
-- `apps/worker`: Fastify worker with the orchestrator, SQLite and WebSocket events
-- `apps/demoboard`: the small SaaS app we control and record in demos
-- `packages/shared`: zod schemas, the source of truth for every artifact
-- `packages/tinyfish`, `recorder`, `llm`, `director`, `voice`, `video`, `cli`
+Next: the Phase 0 spikes in `spikes/` (S1 needs `TINYFISH_API_KEY`), then the worker/orchestrator. Update this file's **Commands** section as real scripts land. Don't document commands that don't exist yet.
+
+## Layout
+pnpm workspace monorepo, TypeScript strict throughout. Internal packages export their TypeScript source directly (`"exports": { ".": "./src/index.ts" }`) and run through tsx/vitest, so there's no build step.
+- `packages/shared`, `packages/llm`, `packages/cli`: exist
+- Planned: `apps/web` (Next.js + Tailwind UI), `apps/worker` (Fastify, orchestrator, SQLite, WebSocket events), `apps/demoboard` (the SaaS app we record in demos), `packages/tinyfish`, `recorder`, `director`, `voice`, `video`
 
 ## Commands
-_None yet._ Planned: `pnpm install`, `pnpm dev`, `pnpm test`, `pnpm agentcast doctor`.
+- `pnpm install`: install everything. pnpm blocks dependency build scripts by default; approve one with `pnpm approve-builds <pkg>`.
+- `pnpm typecheck`: `tsc` in every package
+- `pnpm test`: vitest across the repo. LLM adapter tests use a fake CLI (`packages/llm/src/test/fake-claude.mjs`) and spend no quota.
+- `pnpm agentcast doctor [--probe]`: checks tools, keys and the LLM backend. `--probe` makes one tiny real LLM call.
 
 ## Environment
-- Copy `.env.example` to `.env` once it exists. Required keys: `TINYFISH_API_KEY` and `ELEVENLABS_API_KEY`.
+- Node 22+. Copy `.env.example` to `.env` (the CLI loads it automatically). Required keys: `TINYFISH_API_KEY` and `ELEVENLABS_API_KEY`.
 - **No LLM API key is needed.** LLM work runs through whichever coding-agent CLI is installed and logged in (`claude`, `opencode` or `codex`), selected by `AGENTCAST_LLM` (default `auto`). See PRD §9.9.
 
 ## Rules
