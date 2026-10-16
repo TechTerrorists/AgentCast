@@ -194,7 +194,7 @@ Priority: **P0** = required for the hackathon demo · **P1** = should have, buil
 | FR-22 | Stream the TinyFish live view (`streaming_url`) of each agent into the UI | P0 |
 | FR-23 | Guardrails in every goal: stay on the product's domain, no destructive or irreversible actions (delete, pay, send to real users, change billing), no real personal data | P0 |
 | FR-24 | Detect blockers (CAPTCHA, OTP, email verification, paywall) and surface a "sign in once" or skip prompt instead of failing silently | P1 |
-| FR-25 | Score and rank flows (value shown, steps, risk, duration) and pre-select top 3–4 | P1 |
+| FR-25 | Score and rank flows with the rubric in §9.2.1 (hard gates, then value alignment, visible payoff, length, risk, distinctness). Pre-select the top 3–4 and order them into a story arc (setup → core → payoff → share). Autopilot depends on this ranking. | P0 |
 | FR-26 | User can add a flow in natural language at gate 1, which spawns one more flow run | P1 |
 | FR-27 | Seed demo data: the agent fills the account with realistic sample content before recording, so screens look lived-in | P2 |
 
@@ -215,6 +215,7 @@ Priority: **P0** = required for the hackathon demo · **P1** = should have, buil
 | FR-44 | Capture CDP `Page.startScreencast` frames with timestamps. Transcode to constant-frame-rate MP4. | P0 |
 | FR-45 | Emit `timeline.json`: for every action, `t`, kind, label, bbox, cursor path, URL, settle time, and **dead intervals** (locator resolution, slow loads) safe to cut | P0 |
 | FR-46 | "Takes": if a step fails, the take is discarded and retried (max 3), self-healing the failing locator. Only clean takes are kept. | P0 |
+| FR-46a | **Outcome verification:** after each step settles, check the step's expectations (URL, visible text/element, input value, or "something changed"). A step that ran without error but didn't produce its expected result fails the take. Expectations learned from the first clean take are reused on re-runs. See §9.3.1. | P0 |
 | FR-47 | Desktop (1440×900 @2x) and mobile (390×844 @3x, touch, mobile UA) form factors | P0 desktop / P1 mobile |
 | FR-48 | PII redaction: blur DOM elements matching email, API-key or token patterns and user-specified selectors via injected CSS before capture | P1 |
 | FR-49 | Fallback footage: if CDP recording fails entirely, use the Agent run's `video_url` recording for that flow, marked as "rough" | P2 |
@@ -264,6 +265,16 @@ Priority: **P0** = required for the hackathon demo · **P1** = should have, buil
 | FR-93 | CLI (`agentcast run/rerun`) and GitHub Action wrapper | P1 |
 | FR-94 | Webhook mode: TinyFish `webhook_url` for async agent runs (needed when the worker is behind a public URL) | P2 |
 
+### 6.11 LLM backends and portability
+| ID | Requirement | Pri |
+|---|---|---|
+| FR-100 | Every LLM call goes through `packages/llm` (§9.9). No stage calls a model vendor's SDK or CLI directly. | P0 |
+| FR-101 | `claude-code` backend: drives the locally installed, logged-in Claude Code CLI. **No API key required.** Default backend. | P0 |
+| FR-102 | `opencode` and `codex` backends with the same task contract | P1 |
+| FR-103 | `anthropic-api` backend, used only when `ANTHROPIC_API_KEY` is set and selected | P2 |
+| FR-104 | `agentcast doctor`: reports Node, pnpm, ffmpeg, Chromium, TinyFish and ElevenLabs keys, and which LLM CLIs are installed. `--probe` runs one tiny structured-output call per backend to confirm it's logged in. | P0 |
+| FR-105 | The repo ships `AGENTS.md` (canonical project instructions) and `CLAUDE.md` (imports it), so Claude Code, Codex, opencode and similar agents get the same instructions on any machine that clones the repo | P0 |
+
 ---
 
 ## 7. System architecture
@@ -296,7 +307,8 @@ flowchart LR
   subgraph W["Worker — Node.js / TypeScript (local)"]
     ORC[Orchestrator<br/>stage graph · SQLite · WS events]
     REC[Recorder<br/>Playwright over CDP]
-    DIR[Director<br/>Claude Agent SDK / claude -p]
+    DIR[Director + script writer]
+    LLM[LLM runner<br/>claude -p · opencode run · codex exec]
     RND[Renderer<br/>Remotion + FFmpeg]
     VOX[Voice client]
   end
@@ -309,8 +321,8 @@ flowchart LR
     BROW[Browser API × N<br/>CDP sessions]
   end
 
-  subgraph EXT["External APIs"]
-    CL[Claude API]
+  subgraph EXT["External"]
+    CL[Your coding-agent login<br/>Claude Code by default · no API key]
     EL[ElevenLabs TTS]
   end
 
@@ -320,7 +332,8 @@ flowchart LR
   AGENT --- PROF
   AGENT --- VAULT
   ORC --> REC --> BROW
-  ORC --> DIR --> CL
+  ORC --> DIR --> LLM --> CL
+  REC -. locator healing .-> LLM
   ORC --> VOX --> EL
   ORC --> RND
 ```
@@ -406,6 +419,8 @@ Per-flow run output schema (validated in Spike S2, see the implementation plan):
           "near_text": { "type": "string" },
           "value": { "type": "string" },
           "expected_result": { "type": "string" },
+          "result_url_path": { "type": "string" },
+          "result_visible_text": { "type": "string" },
           "narration_hint": { "type": "string" }
         },
         "required": ["action"]
@@ -435,13 +450,46 @@ Typed values marked `secret` are stored as `{"redacted": true}` in `timeline.jso
 ### 9.1 Understand (Fetch)
 1. Fetch the root URL with `links: true, image_links: true`.
 2. Pick up to 9 same-origin links scored by path keywords (`/features`, `/pricing`, `/product`, `/docs`, `/about`), and fetch them in one batch.
-3. Claude (small model) produces `product-brief.json`. A deterministic extractor produces `brand.json`: logo candidates from `image_links`, colors from a quick headless screenshot palette (k-means on the hero) or `theme-color` meta.
+3. The LLM runner (fast tier, §9.9) produces `product-brief.json`. A deterministic extractor produces `brand.json`: logo candidates from `image_links`, colors from a quick headless screenshot palette (k-means on the hero) or `theme-color` meta.
 
 ### 9.2 Discover and flow runs (Agent)
 - The discovery run uses `/run-sse` so we can stream `PROGRESS.purpose` lines and `STREAMING_URL` to the UI.
 - Candidate flows each get their own `/run-async` run (batch endpoint), polled via `GET /v1/runs/{id}`, also live-viewable.
 - Results are normalized into `flows.json`. Step screenshots are pulled for gate 1.
 - **Why two levels:** a single long agent run that "finds and performs 4 flows" is slow, serial and fails as one unit. Per-flow runs parallelize and fail independently.
+
+#### 9.2.1 Flow scoring and selection
+
+"Best flow" is a judgment call, so selection combines hard gates, an LLM judge with screenshots as evidence, and cheap deterministic signals. The human review at gate 1 is the final safety net.
+
+**Hard gates.** A flow that fails any of these is dropped before scoring:
+- The per-flow agent run reported `completed: true` with no `blockers` (CAPTCHA, OTP, paywall, email verification).
+- It has at least 2 steps, and every step has at least one semantic target (`target_text`, `target_role`, `target_label` or `near_text`), or is a `navigate`/`wait`.
+- It stays on the product's domain (or a known auth provider during sign-in).
+
+**Scored signals:**
+
+| Signal | Source | How it's measured | Weight |
+|---|---|---|---|
+| **Value alignment** (V) | LLM judge (fast tier) | 0–5: how directly the flow proves one of the value props in `product-brief.json`. The judge must cite which value prop. | 0.35 |
+| **Visible payoff** (P) | LLM judge with screenshots | 0–5: compares the first and last step screenshots. A large, legible change (empty page → generated plan, blank chart → populated chart) scores high. A settings toggle scores low. | 0.30 |
+| **Length fit** (L) | Deterministic | 1.0 for 3–12 steps and an estimated 8–20 s of footage, falling off linearly to 0 at 20 steps / 40 s | 0.15 |
+| **Distinctness** (D) | Deterministic | 1.0 minus the max similarity to any higher-ranked flow (title-embedding cosine, shared start URL, perceptual hash of final screenshot) | 0.10 |
+| **Focus match** (F) | LLM judge | 0–5: match against the user's focus prompt (FR-3). Weight 0 if no focus prompt; its 0.10 then goes to V. | 0.10 |
+| **Risk** (R) | Deterministic | −0.15 per step whose label matches destructive keywords (`delete`, `remove`, `pay`, `purchase`, `send`, `invite`, `publish`), capped at −0.45. Such flows always need explicit approval at gate 1. | penalty |
+
+```
+score = 0.35·V/5 + 0.30·P/5 + 0.15·L + 0.10·D + 0.10·F/5 + R
+```
+
+The judge runs once per surviving flow, in parallel. It also returns a one-line rationale (shown on the gate-1 card) and a **story role**: `setup`, `core`, `payoff` or `share`.
+
+**Selection and ordering:**
+1. Greedily take the highest-scoring flows, recomputing distinctness after each pick, until 3–4 are chosen or the estimated total footage exceeds the target length from the style prompt (default 60 s).
+2. Order by story role: setup → core → payoff → share. Within a role, keep score order. At most one `setup` flow, and only if it's short; sign-in and onboarding are rarely worth showing.
+3. Write the scores, rationale and story role into `flows.json` so gate 1 can show why each flow was picked, and so the user can override.
+
+Weights live in config and are tuned against the benchmark set (implementation plan, Phase 8).
 
 ### 9.3 Record (Browser API + Playwright)
 Per form factor:
@@ -457,6 +505,7 @@ Per form factor:
    - Animate the mouse along an eased path (~350–600 ms, distance-scaled).
    - Hover dwell 150 ms, then act.
    - Wait for settle (network idle ≤ 2 s or DOM-stable 300 ms). Mark slow-load portions as dead.
+   - **Verify the outcome** against the step's expectations (§9.3.1). A failed check fails the take.
    - Log the event.
 6. Stop the screencast. Frames + timestamps go through ffmpeg (concat demuxer with per-frame durations) into CFR 30 fps `recording.mp4`. Write `timeline.json`.
 7. `DELETE` the session (always, in `finally`).
@@ -464,6 +513,35 @@ Per form factor:
 **Clock sync:** action times are logged with the local monotonic clock. Offset to screencast clock = median(`receipt_local − metadata.timestamp`) over all frames. Timeline `t` is expressed in video time.
 
 **Take model:** a failed step aborts the take (we don't keep partial footage), heals the locator (LLM pick from `ariaSnapshot()`), and restarts that flow from its `start_url`. Flows are separate sub-clips, so one bad flow doesn't invalidate the others.
+
+#### 9.3.1 Outcome verification
+
+Finding exactly one matching element and clicking it without an error doesn't prove the click did the right thing. The click might land on the right button while a modal intercepts it, or a form might silently reject input. Each step therefore carries **expectations** that are checked after the page settles.
+
+**Where expectations come from**, in priority order:
+1. **Learned from the last clean take.** After the first successful take, we record what each step actually changed: the URL path after it, new visible headings/dialogs/toasts (diffed from the ARIA snapshot before and after), and input values. These become the step's expectations for every later take and re-run. This is the strongest source.
+2. **Reported by the agent.** `result_url_path` and `result_visible_text` from the per-flow run (§8.1) become `url` and `text` checks.
+3. **Implied by the action.** A `type` step implies the input's value equals the typed text. A `select` step implies the selected option.
+4. **Fallback.** If nothing else is known, `changed`: the URL changed or the DOM had a meaningful mutation (added or removed visible elements, not just a spinner or a timestamp).
+
+**Check types:**
+
+| Type | Passes when | Example |
+|---|---|---|
+| `url` | Current URL path matches a pattern (ids replaced with wildcards) | `/projects/*` after "Create" |
+| `text` | Text is visible in the viewport | "Q4 Launch" |
+| `element` | A role + name is visible | `heading "Q4 Launch"`, `dialog "Choose a template"` |
+| `value` | An input's value equals the expected value | Project name = "Q4 Launch" |
+| `changed` | URL or meaningful DOM change since before the action | fallback |
+
+**Evaluation:** the checks are polled for up to 5 s after settle (the extra time counts as dead time). All checks attached to the step must pass. Agent-reported text is matched loosely (case-insensitive, whitespace-normalized, substring), because the agent paraphrases. Learned checks are matched exactly.
+
+**On failure:**
+1. The take is discarded. The failure reason ("expected heading 'Q4 Launch', saw dialog 'Upgrade to Pro'") is logged and shown in the UI.
+2. Healing gets the before/after screenshots, the ARIA snapshot and the failed expectation. It picks a different element if the locator was wrong, or adds a prerequisite step (close a modal, scroll a container) if something blocked the action.
+3. If the same expectation fails on all 3 takes, the flow is marked failed. During a re-run this is how a real UI change is detected, and it triggers the escalation in FR-92.
+
+Learned expectations are stored per form factor in `replay-plan.json`, next to the resolved locators.
 
 ### 9.4 Script (Claude)
 Input: brief, flows, `timeline.json` (labels, durations, dead time removed), style prompt, mode, language list.
@@ -486,8 +564,8 @@ Remotion's `calculateMetadata` computes total duration per (language × aspect) 
 
 ### 9.7 Direct (Claude Code)
 - The workspace is the job's `render/` dir: a Remotion project with `src/primitives/*` (VirtualCamera, Cursor, ClickRipple, Captions, Callout, TitleCard, LowerThird, Transition, MusicBed), `src/schema/edl.ts` (zod), artifacts in `data/`, and `DIRECTOR.md` (role, rules, style prompt, budget).
-- It's invoked through the **Claude Agent SDK** (the engine behind Claude Code), with a `claude -p` CLI fallback. The model is configurable (default: the latest Claude Opus).
-- **Allowed tools:** `Read`, `Write`, `Edit`, `Glob`, `Grep`, and `Bash` restricted to `npx tsc --noEmit`, `npx remotion still …`, `node scripts/validate-edl.mjs`. No network tools. `maxTurns` 30, wall-clock timeout 6 min.
+- It's invoked as an `agent` task through the LLM runner (§9.9). By default that's headless Claude Code (`claude -p`) on the user's own login, with the smart tier (`opus` alias). opencode or Codex can be swapped in by config.
+- **Allowed tools:** `Read`, `Write`, `Edit`, `Glob`, `Grep`, and `Bash` restricted to `npx tsc --noEmit`, `npx remotion still …`, `node scripts/validate-edl.mjs`. No network tools, no MCP servers. Wall-clock timeout 6 min.
 - **Definition of done:** `edl.json` validates, `custom/*` type-checks, and three stills (0 s, middle, end) render without error. The worker re-verifies independently, so it doesn't trust the agent's claim.
 - **Revise loop:** user feedback is appended to the session, and Claude edits only what is needed.
 
@@ -496,6 +574,59 @@ Remotion's `calculateMetadata` computes total duration per (language × aspect) 
 - **Virtual camera math:** camera keyframes are in *source* coordinates (`{t, bbox, zoom}`). For each output aspect, the crop rect = the largest rect of that aspect containing `bbox × padding`, scaled by zoom, clamped to the frame, and spring-smoothed (critically damped). For 9:16 from desktop footage, this reframes like a camera operator. Mobile footage at 9:16 is native.
 - **Audio:** VO per segment as `<Audio>` in `<Sequence>`s. Music with a volume callback for ducking. Final loudness normalized in an FFmpeg pass.
 - **Outputs:** `out/<variant>.mp4`, `.srt`, `.vtt`, `poster.jpg`, `teaser.gif`.
+
+### 9.9 LLM backends: bring your own coding agent
+
+AgentCast needs **no LLM API key**. Every LLM call goes through `packages/llm`, which drives a coding-agent CLI that is already installed and logged in on the machine. Claude Code is the default, first-class backend. Whoever clones the repo uses whichever agent they have.
+
+**Two kinds of task:**
+
+| Kind | Used by | Contract |
+|---|---|---|
+| `json` | Product brief, flow-scoring judge, script writer, locator healing, mobile prerequisite step, auto-tighten | Prompt + JSON Schema + optional image/file paths → a zod-validated object |
+| `agent` | Director (EDL + custom components) and the revise loop | Workspace dir + task prompt + allowed commands → files written in the workspace, verified independently by the worker. Streams progress events and returns a session id so revisions can resume. |
+
+**Model tiers:** `smart` (director, script writer) and `fast` (brief, judge, healing). For Claude Code these map to the `opus` and `haiku` aliases, so new model versions need no code change. For other backends the model strings come from config.
+
+**Backends:**
+
+| Backend | Auth | `json` task | `agent` task | Status |
+|---|---|---|---|---|
+| **`claude-code`** (default) | The user's Claude Code login (subscription). No key. | `claude -p … --json-schema '<schema>' --output-format json` → read `structured_output` | `claude -p … --output-format stream-json --verbose`. Revise with `--resume <session_id>`. | Verified on the dev machine (Claude Code 2.1.301): sandboxed file write and `--json-schema` both work on a subscription login |
+| **`opencode`** | Whatever provider opencode is configured with | `opencode run --format json` + file contract | `opencode run --dir <ws> --format json [--session <id>]`, with permissions from a generated `opencode.json` in the workspace. Never `--auto`. | Flags confirmed from `--help` (opencode 1.18.27). Permission config to verify in spike S6. |
+| **`codex`** | Codex CLI login | `codex exec --output-schema schema.json -o result.json` | `codex exec --json -C <ws> --sandbox workspace-write --skip-git-repo-check`, resumed with `codex exec resume <id>` | Not installed on the dev machine. Flags to verify on install. |
+| **`anthropic-api`** (optional) | `ANTHROPIC_API_KEY` | Messages API with structured output | Claude Agent SDK | Only when a key is present and selected |
+
+**Claude Code invocation (every call is locked down):**
+```bash
+# --restricted         no Bash/WebFetch unless named in --tools; ignores user/project settings; file tools confined to cwd
+# --strict-mcp-config  none of the user's MCP servers (Drive, Gmail, browser plugins…) load
+# --tools              json tasks use "Read" (for images) or ""
+# --permission-mode    headless can't prompt, so anything not allowed is denied
+# --model              opus for the smart tier, haiku for the fast tier
+claude -p "<prompt>" \
+  --restricted \
+  --strict-mcp-config \
+  --tools "Read,Write,Edit,Glob,Grep,Bash" \
+  --allowedTools "Bash(npx tsc --noEmit)" "Bash(npx remotion still:*)" "Bash(node scripts/validate-edl.mjs)" \
+  --permission-mode acceptEdits \
+  --model opus \
+  --output-format stream-json --verbose
+```
+- **Never pass `--bare`.** It only accepts `ANTHROPIC_API_KEY` or an `apiKeyHelper` and ignores the subscription login.
+- If `ANTHROPIC_API_KEY` happens to be set in the shell, Claude Code may bill that key instead of the subscription. The runner removes it from the child process environment unless `AGENTCAST_CLAUDE_USE_API_KEY=1`.
+- The child process also gets no TinyFish or ElevenLabs keys.
+
+**Selection:** `AGENTCAST_LLM=auto` (the default) picks the first available of `claude-code` → `opencode` → `codex` → `anthropic-api`. Per-tier overrides are `AGENTCAST_LLM_SMART` and `AGENTCAST_LLM_FAST`, so you can, for example, run the director on Claude Code and the judge on opencode. `agentcast doctor` shows what was detected.
+
+**Rules that keep backends interchangeable:**
+1. **File contract.** Each task gets a scratch dir `jobs/<id>/llm/<taskId>/` with `TASK.md`, `schema.json` and the inputs (screenshots, ARIA snapshots). Native structured output (`--json-schema`, `--output-schema`) is used where the backend has it. Otherwise the agent writes `result.json`. The worker always validates with zod and allows one retry with the validation errors.
+2. **Instructions live in the prompt and the task files** (`TASK.md`, `DIRECTOR.md`), never in backend-specific memory files, so no backend depends on `CLAUDE.md`/`AGENTS.md` discovery. Restricted mode ignores project settings anyway.
+3. **Images are passed as file paths** the agent opens: Claude Code's `Read` tool, `codex -i`, `opencode -f`.
+4. **One event stream.** Each adapter maps its CLI's stdout into `LlmEvent` (`text`, `tool_use`, `done`, `error`) for the UI. Unknown events are ignored, which tolerates CLI version drift.
+5. **Budget for subscription limits.** Subscription logins have usage limits, and each CLI call has about 3–5 s of startup. The LLM pool defaults to 2 concurrent calls, the judge scores all flows in one batched call, and locator healing only runs after the deterministic lookup chain fails. Healing latency becomes dead time that the edit cuts.
+
+**Hosted-product caveat:** running AgentCast on your own machine with your own CLI login is the intended setup for this build. A hosted, multi-user AgentCast must not route other people's jobs through one personal subscription. It would use `anthropic-api` with a proper key, or run on each user's own machine with their own login.
 
 ---
 
@@ -508,7 +639,7 @@ All artifacts live in `~/.agentcast/jobs/<jobId>/` and carry `"schemaVersion"`. 
 type Flow = {
   id: string; title: string; whyItMatters: string; startUrl: string;
   requiresAuth: boolean; rank: number; selected: boolean;
-  steps: Step[]; tinyfishRunId: string;
+  scoring: FlowScoring; steps: Step[]; tinyfishRunId: string;
 };
 type Step = {
   id: string;
@@ -516,10 +647,26 @@ type Step = {
   target?: { text?: string; role?: string; label?: string; placeholder?: string; near?: string };
   value?: string; secret?: boolean;
   expected?: string; narrationHint?: string; screenshotUrl?: string;
+  expect?: Expectation[];                   // agent-reported or action-implied (§9.3.1)
 };
+type FlowScoring = {                        // §9.2.1
+  valueAlignment: number; visiblePayoff: number; lengthFit: number;
+  distinctness: number; focusMatch?: number; riskPenalty: number;
+  score: number; storyRole: 'setup'|'core'|'payoff'|'share';
+  valuePropCited: string; rationale: string;
+};
+type Expectation =
+  | { type: 'url'; pattern: string }
+  | { type: 'text'; text: string; match: 'loose'|'exact' }
+  | { type: 'element'; role: string; name: string }
+  | { type: 'value'; target: string; value: string }
+  | { type: 'changed' };
 
-// replay-plan.json — cache of resolved locators per form factor
-type ReplayPlan = Record<FormFactor, Record<StepId, { strategy: 'role'|'label'|'placeholder'|'text'|'llm'; locator: string; lastOk: string }>>;
+// replay-plan.json — cache of resolved locators + learned expectations per form factor
+type ReplayPlan = Record<FormFactor, Record<StepId, {
+  strategy: 'role'|'label'|'placeholder'|'text'|'llm'; locator: string; lastOk: string;
+  learnedExpect?: Expectation[];            // from the last clean take; preferred over Step.expect
+}>>;
 
 // recordings/<formFactor>/timeline.json  (the edit timeline)
 type Timeline = {
@@ -578,7 +725,7 @@ type EDL = {
 | **Reliability** | ≥ 80% of runs on the curated demo targets produce a video with no human intervention. Every stage has retries with backoff and honors `Retry-After` on 429/503. |
 | **Cost control** | `max_steps` and `max_duration_seconds` on every Agent run. Browser sessions get `timeout_seconds` and guaranteed `DELETE`. TTS only re-synthesizes changed lines. Per-job budget display. |
 | **Observability** | Structured logs per stage (pino), every external call logged with duration and status (no secrets), stage timings shown in the UI, `events.ndjson` per job for replay/debug |
-| **Portability** | Runs on a single laptop (Linux/macOS), Node 20+, FFmpeg (bundled by Remotion), Chromium only for local stills |
+| **Portability** | Runs on a single laptop (Linux/macOS), Node 20+, FFmpeg (bundled by Remotion), Chromium only for local stills. Needs only TinyFish and ElevenLabs keys plus any one supported coding-agent CLI that's logged in (§9.9). `git clone` → `pnpm install` → `agentcast doctor` → run. |
 
 ---
 
@@ -587,7 +734,7 @@ type EDL = {
 | Threat | Mitigation |
 |---|---|
 | **Credential leakage to LLMs/logs** | Vault or a human sign-in. Local secrets are AES-256-GCM encrypted with a key in the OS keychain or an env var. `secret` values redacted in all artifacts. Password fields are already masked on screen, and email/token patterns are blurred (FR-48). |
-| **Prompt injection from the target site** | Page copy, step text and screenshots are *untrusted data*. Claude Code runs with no network tools, a restricted Bash allowlist, a job-scoped cwd and no env secrets. Worst case is a bad video, not exfiltration. The EDL is schema-validated, and custom components are type-checked and rendered in Remotion's sandbox. Prompts wrap site content in delimiters with instructions to treat it as data. |
+| **Prompt injection from the target site** | Page copy, step text and screenshots are *untrusted data*. The coding agent runs in restricted mode (Claude Code `--restricted --strict-mcp-config`, equivalent permission configs for other backends) with no network tools, no MCP servers, a restricted Bash allowlist, a job-scoped cwd and no env secrets. Worst case is a bad video, not exfiltration. The EDL is schema-validated, and custom components are type-checked and rendered in Remotion's sandbox. Prompts wrap site content in delimiters with instructions to treat it as data. |
 | **Agent doing damage in a real account** | Guardrails in every goal (FR-23). Recommend test accounts or staging. Domain allowlist. The recorder only executes approved steps. Steps whose labels match destructive keywords (`delete`, `remove`, `pay`, `purchase`, `send`, `invite`) need explicit approval at gate 1 even in autopilot. |
 | **SSRF via URL intake** | Validate scheme and host, block private/loopback/link-local ranges and metadata IPs. TinyFish Fetch also rejects these. |
 | **Third-party content rights** | Users may only generate videos of products they own or are authorized to show. Music library is royalty-free with licenses tracked in `music/LICENSES.md`. |
@@ -626,6 +773,8 @@ type EDL = {
 | R10 | Credit or rate limits during the live demo | Low | High | Pre-warm, cache artifacts, pre-generated backup run, budget display, honor `Retry-After` |
 | R11 | Agent creates duplicate data on each re-run (e.g. "Q4 Plan (3)") | High | Low | Templated values with a run suffix hidden by the camera crop, or idempotent names. Optional cleanup flow (P2). |
 | R12 | Remotion licensing | Low | Low | Free for individuals and companies ≤ 3 people. Revisit for commercial launch. |
+| R13 | Subscription usage limits hit mid-job (many LLM calls, live demo) | Med | Med | LLM pool of 2, batched judge, deterministic-first healing, fast tier for small tasks. Jobs resume after a limit reset. Switch backend with `AGENTCAST_LLM`. Pre-generate the demo backup run. |
+| R14 | Coding-agent CLI flags or output formats change between versions | Med | Med | Small flag surface, adapter contract tests against recorded CLI output, `agentcast doctor --probe`, file-contract fallback, and tolerant event parsing |
 
 ---
 
@@ -669,4 +818,5 @@ type EDL = {
 - Runs (steps, screenshots, video_url): https://docs.tinyfish.ai/key-concepts/runs
 - Live browser preview: https://docs.tinyfish.ai/live-preview
 - TinyFish cookbook: https://github.com/tinyfish-io/tinyfish-cookbook
-- Remotion: https://www.remotion.dev/docs · ElevenLabs TTS with timestamps: https://elevenlabs.io/docs · Claude Agent SDK: https://docs.claude.com
+- Remotion: https://www.remotion.dev/docs · ElevenLabs TTS with timestamps: https://elevenlabs.io/docs
+- Claude Code headless mode: https://docs.claude.com/en/docs/claude-code/headless · opencode CLI: https://opencode.ai/docs/cli · Codex CLI: https://github.com/openai/codex
