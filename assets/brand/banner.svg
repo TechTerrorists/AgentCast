@@ -1,0 +1,190 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="400" viewBox="0 0 1280 400" role="img" aria-labelledby="title desc">
+  <title id="title">AgentCast</title>
+  <desc id="desc">Paste a URL, get a polished launch video of your real product. TinyFish is the camera crew, Claude Code is the director, Remotion is the editing suite.</desc>
+  <defs>
+    <style>
+      .sans { font-family: Inter, 'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif; }
+      .mono { font-family: 'JetBrains Mono', 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace; }
+    </style>
+    <linearGradient id="b-brand" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#8B5CF6"/>
+      <stop offset="1" stop-color="#2563EB"/>
+    </linearGradient>
+    <linearGradient id="b-word" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#C7D2FE"/>
+    </linearGradient>
+    <radialGradient id="b-glow-violet" cx="0.12" cy="0.1" r="0.6">
+      <stop offset="0" stop-color="#7C3AED" stop-opacity="0.45"/>
+      <stop offset="1" stop-color="#7C3AED" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="b-glow-blue" cx="0.82" cy="0.55" r="0.55">
+      <stop offset="0" stop-color="#2563EB" stop-opacity="0.38"/>
+      <stop offset="1" stop-color="#2563EB" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="b-dots" width="24" height="24" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1.2" fill="#FFFFFF" opacity="0.07"/>
+    </pattern>
+    <clipPath id="b-frame"><rect width="1280" height="400" rx="24"/></clipPath>
+    <clipPath id="b-screen"><rect x="760" y="86" width="456" height="240" rx="0"/></clipPath>
+  </defs>
+
+  <g clip-path="url(#b-frame)">
+    <!-- backdrop -->
+    <rect width="1280" height="400" fill="#0A0B1E"/>
+    <rect width="1280" height="400" fill="url(#b-dots)"/>
+    <rect width="1280" height="400" fill="url(#b-glow-violet)"/>
+    <rect width="1280" height="400" fill="url(#b-glow-blue)"/>
+
+    <!-- ===== left: identity ===== -->
+    <g transform="translate(72 84) scale(0.5625)">
+      <rect width="128" height="128" rx="30" fill="url(#b-brand)"/>
+      <path d="M42 34 L92 63 L42 92 Z" fill="#FFFFFF" stroke="#FFFFFF" stroke-width="10" stroke-linejoin="round"/>
+      <path d="M72 62 L72 100 L81 91.5 L87.5 105.5 L94 102.5 L87.5 88.5 L99.5 88 Z" fill="#0B1020" stroke="#FFFFFF" stroke-width="4.5" stroke-linejoin="round"/>
+      <circle cx="99" cy="29" r="8.5" fill="#FF4D6D" stroke="#FFFFFF" stroke-width="3.5"/>
+    </g>
+    <text x="164" y="140" class="sans" font-size="60" font-weight="800" letter-spacing="-1.5" fill="url(#b-word)">AgentCast</text>
+
+    <text class="sans" font-size="29" font-weight="600" fill="#E0E7FF" letter-spacing="-0.3">
+      <tspan x="72" y="214">Paste a URL. Get a polished launch</tspan>
+      <tspan x="72" y="252">video of <tspan fill="#A5B4FC">your real product</tspan>.</tspan>
+    </text>
+
+    <!-- roles -->
+    <g class="sans" font-size="14.5">
+      <g transform="translate(72 296)">
+        <rect width="196" height="34" rx="17" fill="#2563EB" fill-opacity="0.16" stroke="#60A5FA" stroke-opacity="0.55"/>
+        <circle cx="18" cy="17" r="4.5" fill="#60A5FA"/>
+        <text x="31" y="22" fill="#DBEAFE"><tspan font-weight="700">TinyFish</tspan> · camera crew</text>
+      </g>
+      <g transform="translate(280 296)">
+        <rect width="200" height="34" rx="17" fill="#7C3AED" fill-opacity="0.18" stroke="#A78BFA" stroke-opacity="0.55"/>
+        <circle cx="18" cy="17" r="4.5" fill="#A78BFA"/>
+        <text x="31" y="22" fill="#EDE9FE"><tspan font-weight="700">Claude Code</tspan> · director</text>
+      </g>
+      <g transform="translate(492 296)">
+        <rect width="218" height="34" rx="17" fill="#F59E0B" fill-opacity="0.13" stroke="#FBBF24" stroke-opacity="0.5"/>
+        <circle cx="18" cy="17" r="4.5" fill="#FBBF24"/>
+        <text x="31" y="22" fill="#FEF3C7"><tspan font-weight="700">Remotion</tspan> · editing suite</text>
+      </g>
+    </g>
+
+    <!-- ===== right: the product being filmed ===== -->
+    <!-- browser window -->
+    <rect x="760" y="56" width="456" height="270" rx="14" fill="#12142C" stroke="#2E335F"/>
+    <path d="M774 56 h428 a14 14 0 0 1 14 14 v16 h-456 v-16 a14 14 0 0 1 14 -14 z" fill="#1A1D3A"/>
+    <circle cx="780" cy="71" r="4.5" fill="#FF5F57"/>
+    <circle cx="795" cy="71" r="4.5" fill="#FEBC2E"/>
+    <circle cx="810" cy="71" r="4.5" fill="#28C840"/>
+    <rect x="884" y="63" width="208" height="17" rx="8.5" fill="#0E1026" stroke="#2E335F"/>
+    <text x="988" y="75.5" class="mono" font-size="10.5" fill="#94A3B8" text-anchor="middle">https://your.app</text>
+
+    <g clip-path="url(#b-screen)">
+      <!-- app chrome -->
+      <rect x="760" y="86" width="96" height="240" fill="#151834"/>
+      <rect x="776" y="104" width="52" height="8" rx="4" fill="#A78BFA" opacity="0.8"/>
+      <rect x="776" y="128" width="64" height="7" rx="3.5" fill="#FFFFFF" opacity="0.14"/>
+      <rect x="776" y="146" width="56" height="7" rx="3.5" fill="#FFFFFF" opacity="0.14"/>
+      <rect x="776" y="164" width="60" height="7" rx="3.5" fill="#FFFFFF" opacity="0.14"/>
+      <rect x="776" y="182" width="48" height="7" rx="3.5" fill="#FFFFFF" opacity="0.14"/>
+
+      <rect x="874" y="102" width="150" height="10" rx="5" fill="#FFFFFF" opacity="0.22"/>
+      <rect x="874" y="120" width="96" height="7" rx="3.5" fill="#FFFFFF" opacity="0.1"/>
+
+      <!-- cards -->
+      <rect x="874" y="144" width="100" height="70" rx="9" fill="#1C2045" stroke="#2E335F"/>
+      <rect x="886" y="158" width="44" height="6" rx="3" fill="#FFFFFF" opacity="0.2"/>
+      <path d="M886 200 l14 -10 l12 6 l14 -16 l14 8 l12 -12" fill="none" stroke="#60A5FA" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <rect x="986" y="144" width="100" height="70" rx="9" fill="#1C2045" stroke="#2E335F"/>
+      <rect x="998" y="158" width="52" height="6" rx="3" fill="#FFFFFF" opacity="0.2"/>
+      <rect x="998" y="186" width="10" height="16" rx="2" fill="#A78BFA" opacity="0.7"/>
+      <rect x="1013" y="178" width="10" height="24" rx="2" fill="#A78BFA" opacity="0.85"/>
+      <rect x="1028" y="170" width="10" height="32" rx="2" fill="#A78BFA"/>
+      <rect x="1043" y="182" width="10" height="20" rx="2" fill="#A78BFA" opacity="0.75"/>
+      <rect x="874" y="226" width="212" height="84" rx="9" fill="#1C2045" stroke="#2E335F"/>
+      <rect x="886" y="240" width="120" height="6" rx="3" fill="#FFFFFF" opacity="0.2"/>
+      <rect x="886" y="256" width="170" height="5" rx="2.5" fill="#FFFFFF" opacity="0.09"/>
+      <rect x="886" y="268" width="150" height="5" rx="2.5" fill="#FFFFFF" opacity="0.09"/>
+      <rect x="886" y="280" width="160" height="5" rx="2.5" fill="#FFFFFF" opacity="0.09"/>
+
+      <!-- the button the agent clicks -->
+      <rect x="1106" y="144" width="94" height="30" rx="8" fill="url(#b-brand)"/>
+      <text x="1153" y="163.5" class="sans" font-size="11.5" font-weight="700" fill="#FFFFFF" text-anchor="middle">+ New project</text>
+
+      <!-- discovered flow path -->
+      <path d="M800 252 C 840 236, 860 196, 924 186 C 990 130, 1050 124, 1102 152" fill="none" stroke="#60A5FA" stroke-width="2" stroke-dasharray="5 6" opacity="0.9"/>
+      <g class="sans" font-size="11" font-weight="800" text-anchor="middle">
+        <circle cx="800" cy="252" r="11" fill="#2563EB" stroke="#0A0B1E" stroke-width="2"/>
+        <text x="800" y="256" fill="#FFFFFF">1</text>
+        <circle cx="936" cy="186" r="11" fill="#2563EB" stroke="#0A0B1E" stroke-width="2"/>
+        <text x="936" y="190" fill="#FFFFFF">2</text>
+      </g>
+    </g>
+
+    <!-- smart-zoom frame around the target -->
+    <g fill="none" stroke="#FBBF24" stroke-width="2.5" stroke-linecap="round">
+      <path d="M1094 146 v-12 h12"/>
+      <path d="M1200 134 h12 v12"/>
+      <path d="M1212 172 v12 h-12"/>
+      <path d="M1106 184 h-12 v-12"/>
+    </g>
+    <text x="1212" y="126" class="mono" font-size="10" fill="#FBBF24" text-anchor="end">zoom 1.8×</text>
+
+    <!-- cursor + click ripple -->
+    <circle cx="1188" cy="170" r="11" fill="none" stroke="#FFFFFF" stroke-opacity="0.5" stroke-width="2"/>
+    <circle cx="1188" cy="170" r="19" fill="none" stroke="#FFFFFF" stroke-opacity="0.2" stroke-width="2"/>
+    <path transform="translate(1188 170) scale(0.62)" d="M0 0 L0 38 L9 29.5 L15.5 43.5 L22 40.5 L15.5 26.5 L27.5 26 Z"
+          fill="#0B1020" stroke="#FFFFFF" stroke-width="4" stroke-linejoin="round"/>
+
+    <!-- REC badge -->
+    <g transform="translate(1140 296)">
+      <rect width="66" height="22" rx="11" fill="#0A0B1E" fill-opacity="0.85" stroke="#FF4D6D" stroke-opacity="0.6"/>
+      <circle cx="13" cy="11" r="4.5" fill="#FF4D6D"/>
+      <text x="24" y="15" class="mono" font-size="10.5" font-weight="700" fill="#FFE4E6">REC 0:42</text>
+    </g>
+
+    <!-- edit timeline driven by the step log -->
+    <g transform="translate(760 340)">
+      <rect width="456" height="40" rx="10" fill="#12142C" stroke="#2E335F"/>
+      <rect x="10" y="8" width="96" height="10" rx="3" fill="#2563EB"/>
+      <rect x="110" y="8" width="132" height="10" rx="3" fill="#3B82F6"/>
+      <rect x="246" y="8" width="88" height="10" rx="3" fill="#2563EB"/>
+      <rect x="338" y="8" width="108" height="10" rx="3" fill="#3B82F6"/>
+      <g fill="#FBBF24">
+        <rect x="60" y="9" width="7" height="7" transform="rotate(45 63.5 12.5)"/>
+        <rect x="176" y="9" width="7" height="7" transform="rotate(45 179.5 12.5)"/>
+        <rect x="290" y="9" width="7" height="7" transform="rotate(45 293.5 12.5)"/>
+        <rect x="402" y="9" width="7" height="7" transform="rotate(45 405.5 12.5)"/>
+      </g>
+      <g fill="#A78BFA" opacity="0.9">
+        <rect x="12" y="27" width="3" height="6" rx="1.5"/><rect x="18" y="24" width="3" height="11" rx="1.5"/>
+        <rect x="24" y="26" width="3" height="8" rx="1.5"/><rect x="30" y="23" width="3" height="13" rx="1.5"/>
+        <rect x="36" y="25" width="3" height="9" rx="1.5"/><rect x="42" y="27" width="3" height="5" rx="1.5"/>
+        <rect x="48" y="24" width="3" height="11" rx="1.5"/><rect x="54" y="26" width="3" height="7" rx="1.5"/>
+        <rect x="60" y="23" width="3" height="13" rx="1.5"/><rect x="66" y="25" width="3" height="9" rx="1.5"/>
+        <rect x="120" y="26" width="3" height="7" rx="1.5"/><rect x="126" y="23" width="3" height="13" rx="1.5"/>
+        <rect x="132" y="25" width="3" height="9" rx="1.5"/><rect x="138" y="24" width="3" height="11" rx="1.5"/>
+        <rect x="144" y="27" width="3" height="5" rx="1.5"/><rect x="150" y="24" width="3" height="11" rx="1.5"/>
+        <rect x="156" y="26" width="3" height="8" rx="1.5"/><rect x="162" y="23" width="3" height="13" rx="1.5"/>
+        <rect x="168" y="25" width="3" height="9" rx="1.5"/><rect x="174" y="26" width="3" height="7" rx="1.5"/>
+        <rect x="256" y="25" width="3" height="9" rx="1.5"/><rect x="262" y="23" width="3" height="13" rx="1.5"/>
+        <rect x="268" y="26" width="3" height="7" rx="1.5"/><rect x="274" y="24" width="3" height="11" rx="1.5"/>
+        <rect x="280" y="27" width="3" height="5" rx="1.5"/><rect x="286" y="24" width="3" height="11" rx="1.5"/>
+        <rect x="350" y="26" width="3" height="8" rx="1.5"/><rect x="356" y="23" width="3" height="13" rx="1.5"/>
+        <rect x="362" y="25" width="3" height="9" rx="1.5"/><rect x="368" y="24" width="3" height="11" rx="1.5"/>
+        <rect x="374" y="27" width="3" height="5" rx="1.5"/><rect x="380" y="24" width="3" height="11" rx="1.5"/>
+        <rect x="386" y="26" width="3" height="7" rx="1.5"/><rect x="392" y="23" width="3" height="13" rx="1.5"/>
+      </g>
+      <rect x="214" y="3" width="2" height="34" rx="1" fill="#FF4D6D"/>
+      <path d="M210 1 h10 l-5 6 z" fill="#FF4D6D"/>
+    </g>
+
+    <!-- variant chips -->
+    <g class="mono" font-size="10.5" font-weight="700" text-anchor="middle">
+      <rect x="1100" y="20" width="54" height="22" rx="6" fill="#2563EB"/>
+      <text x="1127" y="35" fill="#FFFFFF">16:9 EN</text>
+      <rect x="1162" y="20" width="54" height="22" rx="6" fill="#7C3AED"/>
+      <text x="1189" y="35" fill="#FFFFFF">9:16 HI</text>
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" role="img" aria-labelledby="title">
+  <title id="title">AgentCast</title>
+  <defs>
+    <linearGradient id="ac-bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#8B5CF6"/>
+      <stop offset="1" stop-color="#2563EB"/>
+    </linearGradient>
+    <radialGradient id="ac-glow" cx="0.28" cy="0.18" r="0.75">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.28"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- tile -->
+  <rect width="128" height="128" rx="30" fill="url(#ac-bg)"/>
+  <rect width="128" height="128" rx="30" fill="url(#ac-glow)"/>
+
+  <!-- play: the video -->
+  <path d="M42 34 L92 63 L42 92 Z" fill="#FFFFFF" stroke="#FFFFFF" stroke-width="10" stroke-linejoin="round"/>
+
+  <!-- cursor: the agent driving the real product -->
+  <path d="M72 62 L72 100 L81 91.5 L87.5 105.5 L94 102.5 L87.5 88.5 L99.5 88 Z"
+        fill="#0B1020" stroke="#FFFFFF" stroke-width="4.5" stroke-linejoin="round"/>
+
+  <!-- recording -->
+  <circle cx="99" cy="29" r="8.5" fill="#FF4D6D" stroke="#FFFFFF" stroke-width="3.5"/>
+</svg>
